@@ -28,4 +28,5 @@
 
 ## 사용한 오픈소스
 
-React 18.3.1, ReactDOM 18.3.1 — MIT License, © Meta Platforms, Inc. and affiliates. 이 파일 안에 포함되어 있어요.
+- React 18.3.1, ReactDOM 18.3.1 — MIT License, © Meta Platforms, Inc. and affiliates. 이 파일 안에 포함되어 있어요.
+- 글꼴: 주아체(Jua) — SIL Open Font License 1.1, © 2018 The Jua Project Authors. 자주 쓰는 한글 2,350자만 골라 파일 안에 넣었어요. 인터넷이 없어도 같은 글꼴로 보여요. 라이선스 전문은 `FONT-LICENSE-OFL.txt`에 있어요.
