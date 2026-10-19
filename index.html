@@ -731,13 +731,14 @@ a{color:#2f6fa8}a:hover{color:#1d4f80}
 
 <sc-if value="{{ovDayEnd}}" hint-placeholder-val="{{false}}">
 <div style="position: absolute; inset: 0; background: rgba(60, 30, 20, 0.45); z-index: 20; display: flex; align-items: center; justify-content: center">
-<div class="panel pop" style="width: 820px; padding: 34px 44px 40px; display: flex; flex-direction: column; align-items: center; gap: 18px">
+<div class="panel pop" style="width: 820px; padding: 22px 44px 26px; display: flex; flex-direction: column; align-items: center; gap: 12px">
 <div style="display: flex; gap: 14px">
 <sc-for list="{{stamps}}" as="s" hint-placeholder-count="3">
-<canvas ref="{{s.draw}}" width="96" height="96" data-s="6" style="width: 96px; height: 96px"></canvas>
+<canvas ref="{{s.draw}}" width="96" height="96" data-s="6" style="width: 76px; height: 76px"></canvas>
 </sc-for>
 </div>
-<div class="jua" style="font-size: 52px; line-height: 1.1; text-align: center">파티 준비 끝! 즐거운 할로윈!</div>
+<div class="jua" style="font-size: 48px; line-height: 1.1; text-align: center; white-space: pre-line">할로윈 파티 준비 끝!
+이제 즐겨봐요!</div>
 <div style="width: 100%; display: flex; flex-direction: column; gap: 10px">
 <sc-for list="{{endRows}}" as="r" hint-placeholder-count="4">
 <div style="display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: #fffaf0; border: 4px solid #3b2a1a; font-size: 28px">
@@ -1375,7 +1376,7 @@ const GAMES = [
 ];
 const TITLES = { match: '할로윈 짝꿍 찾기', number: '초대장 번호 기억하기', market: '할로윈 장보러 가기', home: '파티 갈 준비하기', bus: '파티장 버스 타러 가기', park: '무엇이 달라졌을까요?' };
 const PLAYABLE = ['match', 'number', 'market', 'home', 'bus', 'park'];
-const GAME_TIME = 90;
+const GAME_TIME = 25;
 const LV = [{ lv: 1, label: '천천히' }, { lv: 2, label: '보통' }, { lv: 3, label: '도전' }];
 
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = r[i]; r[i] = r[j]; r[j] = t; } return r; }
@@ -3478,7 +3479,7 @@ class Component extends DCLogic {
 
     const muted = sn.bgm === 0 && sn.sfx === 0;
     const snd = {
-      btnStyle: 'position:absolute;z-index:25;' + (scr === 'town' ? 'left:586px;top:14px' : 'right:360px;top:14px'),
+      btnStyle: 'position:absolute;z-index:25;' + (S.ov === 'dayend' || S.ov === 'recall' ? 'right:24px;bottom:24px' : scr === 'town' ? 'left:586px;top:14px' : 'right:360px;top:14px'),
       label: muted ? '소리 꺼짐' : '소리', muted, on: !muted, show: !!S.sndOpen,
       open: () => { this.fx('click'); this.setState({ sndOpen: true }); },
       close: this.cl(() => this.setState({ sndOpen: false })),
@@ -3493,7 +3494,7 @@ class Component extends DCLogic {
       evening: S.ov === 'recall' || S.ov === 'dayend',
       townFree: scr === 'town' && !goingTo && S.ov !== 'recall' && S.ov !== 'dayend',
       townQuest: scr === 'town' && !!goingTo,
-      townLine: S.done >= 3 && !d ? '할로윈 파티 준비를 모두 마치셨어요.\n편하게 더 둘러보다 가세요.' : '할로윈 파티를 같이 준비해 볼까요?',
+      townLine: S.done >= 3 && !d ? '할로윈 파티 준비 끝!\n이제 즐겨봐요!' : '할로윈 파티를 같이 준비해 볼까요?',
       townLineStyle: S.done >= 3 && !d ? 'font-size:22px;line-height:1.4;white-space:pre;letter-spacing:-0.5px' : 'font-size:22px;line-height:1.35;white-space:nowrap;letter-spacing:-0.5px',
       doneText: S.done + '/3',
       ovDialog: S.ov === 'dialog', ovNotice: S.ov === 'notice', ovResult: S.ov === 'result', ovRecall: S.ov === 'recall', ovDayEnd: S.ov === 'dayend',
@@ -3502,7 +3503,7 @@ class Component extends DCLogic {
       drawPlayer: this.spr('player'), jackoIcon: this.spr('jacko'), drawHallo: this.ref('hallo', drawHalloTown), drawLights: this.ref('hlights', drawHalloLights), crowd: ['witch', 'ghost', 'pumpkin', 'vamp', 'cat', 'grandpa', 'grandma', 'skel'].reduce((o, k) => { o[k] = this.ref('pp:' + k, (c) => hPerson(c, k)); return o; }, ['dots', 'candy', 'pumpkin', 'heart'].reduce((o, k) => { o['b_' + k] = this.ref('bb:' + k, (c) => hBubble(c, k)); return o; }, {})), batRef: this.spr('bat'), ghostRef: this.spr('ghost'), playerStyle: this.playerStyleOf(this.pos || PLAYER_HOME), playerRef: this._pRef || (this._pRef = (el) => { this.playerEl = el; }), arrowRef: this.spr('arrow'), houseIcon: this.spr('house'), faceSunja: this.face('sunja'),
       stamps, stampOn, places, quest, dlg, notice, head, fb, ctl, hv, bv, pv, rcv, endRows, games,
       res: S.res ? { title: S.res.title, sub: S.res.sub, day: S.play && !!d, free: !(S.play && d), timeout: !!S.res.timeout, won: !S.res.timeout } : { title: '', sub: '', day: false, free: true, timeout: false, won: true },
-      timer: { show: inGame && !!S.tOn, text: Math.floor((S.tLeft || 0) / 60) + ':' + String((S.tLeft || 0) % 60).padStart(2, '0'), cls: 'gtimer' + ((S.tLeft || 0) <= 10 ? ' hurry' : (S.tLeft || 0) <= 30 ? ' soon' : ''), aria: '남은 시간 ' + Math.floor((S.tLeft || 0) / 60) + '분 ' + ((S.tLeft || 0) % 60) + '초' },
+      timer: { show: inGame && !!S.tOn, text: Math.floor((S.tLeft || 0) / 60) + ':' + String((S.tLeft || 0) % 60).padStart(2, '0'), cls: 'gtimer' + ((S.tLeft || 0) <= 5 ? ' hurry' : (S.tLeft || 0) <= 10 ? ' soon' : ''), aria: '남은 시간 ' + Math.floor((S.tLeft || 0) / 60) + '분 ' + ((S.tLeft || 0) % 60) + '초' },
       hourglass: this.ref('hourglass', drawHourglass),
       startDay: this.cl(() => this.startDay()), goSelect: this.cl(() => this.goSelect()), goTown: this.cl(() => this.goTown()), quitDay: this.cl(() => this.quitDay()),
       closeOv: this.cl(() => this.closeOv()), dayNext: this.cl(() => this.dayNext()), again: this.cl(() => this.again()), finishDay: () => this.finishDay(), endDay: this.cl(() => this.endDay())
