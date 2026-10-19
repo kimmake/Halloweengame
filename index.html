@@ -1543,6 +1543,17 @@ const MEL = [
   [81, 0, 76, 81, 84, 0, 81, 76], [84, 0, 81, 77, 81, 0, 77, 72], [71, 0, 74, 71, 68, 0, 71, 74], [76, 0, 72, 0, 69, 0, 0, 0]
 ];
 const CHORDS = [[45, 60, 64], [41, 57, 60], [38, 57, 62], [40, 56, 59], [45, 60, 64], [41, 57, 60], [40, 56, 59], [45, 57, 64]];
+const KORO_A = [[76, 0, 71, 72, 74, 0, 72, 71], [69, 0, 69, 72, 76, 0, 74, 72], [71, 0, 0, 72, 74, 0, 76, 0], [72, 0, 69, 0, 69, 0, 0, 0],
+  [0, 74, 0, 77, 81, 0, 79, 77], [76, 0, 0, 72, 76, 0, 74, 72], [71, 0, 71, 72, 74, 0, 76, 0], [72, 0, 69, 0, 69, 0, 0, 0]];
+const KORO_B = [[76, 0, 0, 0, 72, 0, 0, 0], [74, 0, 0, 0, 71, 0, 0, 0], [72, 0, 0, 0, 69, 0, 0, 0], [68, 0, 0, 0, 71, 0, 0, 0],
+  [76, 0, 0, 0, 72, 0, 0, 0], [74, 0, 0, 0, 71, 0, 0, 0], [72, 0, 76, 0, 81, 0, 0, 0], [80, 0, 0, 0, 0, 0, 0, 0]];
+const CH_E = [40, 56, 59], CH_AM = [45, 60, 64], CH_DM = [38, 57, 62];
+const KORO_CA = [CH_E, CH_AM, CH_E, CH_AM, CH_DM, CH_AM, CH_E, CH_AM];
+const KORO_CB = [CH_AM, CH_E, CH_AM, CH_E, CH_AM, CH_E, CH_AM, CH_E];
+const SONGS = {
+  town: { mel: MEL, ch: CHORDS, bpm: 116, lead: 'marimba' },
+  game: { mel: KORO_A.concat(KORO_A, KORO_B), ch: KORO_CA.concat(KORO_CA, KORO_CB), bpm: 150, lead: 'chip' }
+};
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
 class SoundEngine {
@@ -1590,7 +1601,10 @@ class SoundEngine {
   }
   setLevel(kind, v) { this[kind] = v; this.save(); this.applyLevels(); }
   setScene(s, force) {
-    if (!force && s === this.scene) return; this.scene = s; if (!this.ctx) return;
+    if (!force && s === this.scene) return; this.scene = s;
+    const tr = (s === 'town' || s === 'select') ? 'town' : 'game';
+    if (tr !== this.track) { this.track = tr; if (this.ctx) { const t0 = this.ctx.currentTime; this.step = 0; this.next = t0 + 0.25; this.musicBus.gain.cancelScheduledValues(t0); this.musicBus.gain.setValueAtTime(0.0001, t0); this.musicBus.gain.linearRampToValueAtTime(0.5, t0 + 0.6); } }
+    if (!this.ctx) return;
     const a = SCENE_AMB[s] || AMB_TOWN; const t = this.ctx.currentTime; this.cur = a;
     ['wind', 'leaves', 'water'].forEach((k) => this.amb[k].gain.setTargetAtTime(a[k], t, 0.9));
     this.birdG.gain.setTargetAtTime(a.birds, t, 0.9); this.birdF.frequency.setTargetAtTime(a.indoor ? 1600 : 12000, t, 0.3);
@@ -1604,22 +1618,31 @@ class SoundEngine {
     const c = this.ctx, s = c.createBufferSource(); s.buffer = this.noise; const f = c.createBiquadFilter(); f.type = ftype; f.frequency.value = freq; f.Q.value = q || 0.7;
     const g = c.createGain(); this.env(g, t, peak, 0.005, dur); s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random()); s.stop(t + dur + 0.05); return g;
   }
+  chip(t, m, pos) {
+    const f = mtof(m), c = this.ctx, d = this.musicBus;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; lp.connect(d);
+    const g = this.osc(t, f, 'square', 0.055, 0.006, 0.24, lp);
+    this.osc(t, f, 'triangle', 0.16, 0.004, 0.3, d);
+    if (pos % 4 === 0) this.osc(t, f * 2, 'sine', 0.03, 0.002, 0.16, d);
+  }
   marimba(t, m, vel, dest) {
     const f = mtof(m); this.osc(t, f, 'sine', 0.2 * vel, 0.004, 0.9, dest); this.osc(t, f * 4, 'sine', 0.05 * vel, 0.002, 0.08, dest);
   }
   schedule() {
     const c = this.ctx; if (!c || c.state !== 'running') return;
     if (this.next < c.currentTime) this.next = c.currentTime + 0.05;
-    const spb = 60 / 116 / 2; const ahead = c.currentTime + 0.35;
+    const SG = SONGS[this.track || 'town']; const spb = 60 / SG.bpm / 2; const ahead = c.currentTime + 0.35;
     while (this.next < ahead) {
-      const bar = Math.floor(this.step / 8) % 8, pos = this.step % 8, t = this.next;
-      const mel = MEL[bar][pos]; if (mel) { this.marimba(t, mel, 0.85, this.musicBus); if (pos % 4 === 0) this.osc(t, mtof(mel + 12), 'sine', 0.025, 0.002, 0.25, this.musicBus); }
-      const ch = CHORDS[bar];
+      const bar = Math.floor(this.step / 8) % SG.mel.length, pos = this.step % 8, t = this.next;
+      const mel = SG.mel[bar][pos];
+      if (mel && SG.lead === 'chip') this.chip(t, mel, pos);
+      else if (mel) { this.marimba(t, mel, 0.85, this.musicBus); if (pos % 4 === 0) this.osc(t, mtof(mel + 12), 'sine', 0.025, 0.002, 0.25, this.musicBus); }
+      const ch = SG.ch[bar];
       if (pos % 2 === 0) { const bm = ch[0] + [0, 7, 12, 7][pos / 2]; this.osc(t, mtof(bm), 'triangle', 0.16, 0.006, 0.2, this.musicBus); }
       else { this.osc(t, mtof(ch[1]), 'triangle', 0.045, 0.004, 0.12, this.musicBus); this.osc(t, mtof(ch[2]), 'triangle', 0.04, 0.004, 0.12, this.musicBus); }
       this.burst(t, pos % 2 ? 0.04 : 0.02, 'highpass', 7000, 0.7, pos % 2 ? 0.035 : 0.018, this.musicBus);
       if (pos === 2 || pos === 6) this.burst(t, 0.07, 'bandpass', 1800, 0.8, 0.05, this.musicBus);
-      this.next += spb; this.step = (this.step + 1) % 64;
+      this.next += spb; this.step = (this.step + 1) % (SG.mel.length * 8);
     }
     const a = this.cur || AMB_TOWN, now = c.currentTime;
     if (now > this.ev.bird) { if (a.birds > 0) this.bird(now + 0.05); this.ev.bird = now + 2.5 + Math.random() * 5; }
