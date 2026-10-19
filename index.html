@@ -67,6 +67,9 @@ a{color:#2f6fa8}a:hover{color:#1d4f80}
 .fp9{animation-name:fp9}@keyframes fp9{0%,14%{transform:translate(0,0) scale(.3);opacity:0}15%{transform:translate(0,0) scale(1);opacity:1}42%{transform:translate(0px,-96px) scale(1);opacity:1}64%{transform:translate(0px,-86px) scale(.5);opacity:0}100%{opacity:0;transform:translate(0,0)}}
 .fp10{animation-name:fp10}@keyframes fp10{0%,14%{transform:translate(0,0) scale(.3);opacity:0}15%{transform:translate(0,0) scale(1);opacity:1}42%{transform:translate(48px,-83px) scale(1);opacity:1}64%{transform:translate(54px,-71px) scale(.5);opacity:0}100%{opacity:0;transform:translate(0,0)}}
 .fp11{animation-name:fp11}@keyframes fp11{0%,14%{transform:translate(0,0) scale(.3);opacity:0}15%{transform:translate(0,0) scale(1);opacity:1}42%{transform:translate(83px,-48px) scale(1);opacity:1}64%{transform:translate(93px,-32px) scale(.5);opacity:0}100%{opacity:0;transform:translate(0,0)}}
+.gtimer{position:absolute;left:640px;top:16px;transform:translateX(-50%);z-index:6;height:72px;min-width:200px;padding:0 22px 0 14px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:10px;border:4px solid #3b2a1a;border-radius:36px;background:#fff4dc;box-shadow:0 6px 0 #3b2a1a;font-family:'GMJua',sans-serif;font-size:44px;line-height:1;color:#3b2a1a;pointer-events:none}
+.gtimer.soon{background:#ffd9a0;color:#7a3a10}
+.gtimer.hurry{background:#ffb4a0;color:#8a1f12;animation:tpulse 1s ease-in-out infinite}@keyframes tpulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.08)}}
 .twinkle{animation:twinkle 1.6s ease-in-out infinite}@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.55}}
 .batFly{animation:batFly 22s linear infinite}@keyframes batFly{0%{transform:translate(1320px,30px)}25%{transform:translate(960px,0)}50%{transform:translate(620px,40px)}75%{transform:translate(280px,6px)}100%{transform:translate(-80px,36px)}}
 .batA{animation:batA 4.2s ease-in-out infinite}.batB{animation:batB 5s ease-in-out infinite}.ghostF{animation:ghostF 3.6s ease-in-out infinite}
@@ -532,6 +535,9 @@ a{color:#2f6fa8}a:hover{color:#1d4f80}
 </sc-if>
 
 <!-- 머리 -->
+<sc-if value="{{timer.show}}" hint-placeholder-val="{{true}}">
+<div class="{{timer.cls}}" role="timer" aria-label="{{timer.aria}}"><canvas ref="{{hourglass}}" width="96" height="96" data-s="6" style="width: 44px; height: 44px"></canvas><span>{{timer.text}}</span></div>
+</sc-if>
 <div style="position: absolute; left: 24px; right: 24px; top: 14px; height: 76px; display: flex; justify-content: space-between; align-items: center; z-index: 5; pointer-events: none">
 <div class="wood" style="pointer-events: auto; height: 72px; padding: 0 24px 0 12px; display: flex; align-items: center; gap: 12px">
 <canvas ref="{{head.icon}}" width="144" height="144" data-s="6" style="width: 56px; height: 56px"></canvas>
@@ -665,11 +671,19 @@ a{color:#2f6fa8}a:hover{color:#1d4f80}
 <sc-if value="{{ovResult}}" hint-placeholder-val="{{false}}">
 <div style="position: absolute; inset: 0; background: rgba(40, 28, 16, 0.5); z-index: 20; display: flex; align-items: center; justify-content: center">
 <div class="panel pop" style="width: 760px; padding: 36px 40px 40px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+<sc-if value="{{res.won}}" hint-placeholder-val="{{true}}">
 <canvas ref="{{stampOn}}" width="96" height="96" data-s="6" style="width: 128px; height: 128px"></canvas>
-<div class="jua" style="font-size: 56px; line-height: 1.1">{{res.title}}</div>
+</sc-if>
+<sc-if value="{{res.timeout}}" hint-placeholder-val="{{false}}">
+<canvas ref="{{hourglass}}" width="96" height="96" data-s="6" style="width: 128px; height: 128px"></canvas>
+</sc-if>
+<div class="jua" style="font-size: 52px; line-height: 1.15; white-space: pre-line">{{res.title}}</div>
 <div style="font-size: 30px; line-height: 1.45">{{res.sub}}</div>
 <div style="display: flex; gap: 16px; margin-top: 10px">
 <sc-if value="{{res.day}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{res.timeout}}" hint-placeholder-val="{{false}}">
+<button class="pxbtn cream big" onClick="{{again}}">다시 하기</button>
+</sc-if>
 <button class="pxbtn green big" onClick="{{dayNext}}">다음으로</button>
 </sc-if>
 <sc-if value="{{res.free}}" hint-placeholder-val="{{true}}">
@@ -1361,6 +1375,7 @@ const GAMES = [
 ];
 const TITLES = { match: '할로윈 짝꿍 찾기', number: '초대장 번호 기억하기', market: '할로윈 장보러 가기', home: '파티 갈 준비하기', bus: '파티장 버스 타러 가기', park: '무엇이 달라졌을까요?' };
 const PLAYABLE = ['match', 'number', 'market', 'home', 'bus', 'park'];
+const GAME_TIME = 90;
 const LV = [{ lv: 1, label: '천천히' }, { lv: 2, label: '보통' }, { lv: 3, label: '도전' }];
 
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = r[i]; r[i] = r[j]; r[j] = t; } return r; }
@@ -1669,6 +1684,19 @@ class SoundEngine {
     if (!this.ctx || this.ctx.state !== 'running') return;
     const c = this.ctx, t = c.currentTime + 0.02, now = performance.now();
     if (name === 'arrive') { this.busPass(t, 0.16); this.burst(t + 1.5, 0.7, 'bandpass', 2400, 1.5, 0.12, this.ambBus); return; }
+    if (name === 'timeout') {
+      const B = this.sfxBus;
+      [[67, 0, 0.3], [66, 0.32, 0.3], [65, 0.64, 0.3], [64, 0.98, 1.1]].forEach(([m, dt, dur], i) => {
+        const tt = t + dt, f = mtof(m), o = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+        o.type = 'sawtooth'; o2.type = 'triangle'; o.frequency.setValueAtTime(f, tt); o2.frequency.setValueAtTime(f, tt);
+        if (i === 3) { const v = c.createOscillator(), vg = c.createGain(); v.frequency.value = 6; vg.gain.value = f * 0.025; v.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency); v.start(tt + 0.25); v.stop(tt + dur); o.frequency.exponentialRampToValueAtTime(f * 0.94, tt + dur); }
+        lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, tt); lp.frequency.linearRampToValueAtTime(1700, tt + 0.08); lp.frequency.linearRampToValueAtTime(700, tt + dur);
+        o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(B);
+        g.gain.setValueAtTime(0.0001, tt); g.gain.exponentialRampToValueAtTime(0.26, tt + 0.03); g.gain.setValueAtTime(0.22, tt + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, tt + dur);
+        o.start(tt); o2.start(tt); o.stop(tt + dur + 0.05); o2.stop(tt + dur + 0.05);
+      });
+      return;
+    }
     if (name !== 'ok' && name !== 'no') return;
     if (this.last[name] && now - this.last[name] < 140) return; this.last[name] = now;
     const B = this.sfxBus;
@@ -2404,6 +2432,13 @@ function drawMarketHallo2(c) {
   hLights(c, 98, 78.6, 314, 78.6, 1.2, 20);
 }
 
+function drawHourglass(c) {
+  const S = sk(c);
+  S.rr(3, 1.2, 10, 1.8, 0.8, '#8b5a2b', OL, 0.45); S.rr(3, 13, 10, 1.8, 0.8, '#8b5a2b', OL, 0.45);
+  S.path(() => { c.moveTo(4.2, 3); c.lineTo(11.8, 3); c.quadraticCurveTo(11.6, 6.6, 8.6, 8); c.quadraticCurveTo(11.6, 9.4, 11.8, 13); c.lineTo(4.2, 13); c.quadraticCurveTo(4.4, 9.4, 7.4, 8); c.quadraticCurveTo(4.4, 6.6, 4.2, 3); c.closePath(); }, 'rgba(220,240,255,.9)', OL, 0.5);
+  S.path(() => { c.moveTo(5.4, 4.6); c.lineTo(10.6, 4.6); c.quadraticCurveTo(10, 6.8, 8, 7.6); c.quadraticCurveTo(6, 6.8, 5.4, 4.6); c.closePath(); }, '#f58a2a', null);
+  S.path(() => { c.moveTo(5, 12.6); c.quadraticCurveTo(8, 9.6, 11, 12.6); c.closePath(); }, '#f58a2a', null); S.line(8, 7.6, 8, 11.4, '#f58a2a', 0.5);
+}
 function drawSprite(c, id) {
   if (id === 'player') return toonPlayer(c);
   if (id === 'arrow') return toonArrow(c);
@@ -2849,7 +2884,7 @@ class Component extends DCLogic {
     ['pointerdown', 'touchend', 'mousedown', 'click'].forEach((t) => document.addEventListener(t, this._unlock, true));
     try { if (document.fonts && document.fonts.load) document.fonts.load("40px 'GMJua'").then(() => { this._r = {}; this.forceUpdate(); }); } catch (e) { }
   }
-  componentWillUnmount() { if (this._unlock) ['pointerdown', 'touchend', 'mousedown', 'click'].forEach((t) => document.removeEventListener(t, this._unlock, true)); this.clearT(); if (this._loop) clearInterval(this._loop); this._loop = null; if (this._snd && this._snd.ctx) { try { clearInterval(this._snd.timer); this._snd.ctx.close(); } catch (e) { } } }
+  componentWillUnmount() { this.stopTimer(); if (this._unlock) ['pointerdown', 'touchend', 'mousedown', 'click'].forEach((t) => document.removeEventListener(t, this._unlock, true)); this.clearT(); if (this._loop) clearInterval(this._loop); this._loop = null; if (this._snd && this._snd.ctx) { try { clearInterval(this._snd.timer); this._snd.ctx.close(); } catch (e) { } } }
   clearT() { (this._t || []).forEach((t) => clearTimeout(t)); this._t = []; }
   later(fn, ms) { this._t = this._t || []; this._t.push(setTimeout(fn, ms)); }
   ref(key, fn) {
@@ -2894,8 +2929,8 @@ class Component extends DCLogic {
   busy() { return this.anim && Date.now() < this.anim.t0 + this.anim.dur && this.anim.kind !== 'wiggle' && this.anim.kind !== 'nope' && this.anim.kind !== 'hint'; }
 
   // ---------- 이동 ----------
-  goTown() { this.stopWalk(); this.clearT(); this.anim = null; this.setState({ screen: 'town', ov: null, res: null, notice: null }); }
-  goSelect() { this.stopWalk(); this.clearT(); this.anim = null; this.setState({ screen: 'select', ov: null, notice: null, res: null }); }
+  goTown() { this.stopTimer(); this.state.tOn && this.setState({ tOn: false }); this.stopWalk(); this.clearT(); this.anim = null; this.setState({ screen: 'town', ov: null, res: null, notice: null }); }
+  goSelect() { this.stopTimer(); this.state.tOn && this.setState({ tOn: false }); this.stopWalk(); this.clearT(); this.anim = null; this.setState({ screen: 'select', ov: null, notice: null, res: null }); }
   closeOv() { this.setState({ ov: null, notice: null }); }
   lvOf(g) { return (this._lv && this._lv[g]) || (g === 'park' ? 3 : 2); }
   startGame(g, day) {
@@ -2970,6 +3005,7 @@ class Component extends DCLogic {
     else this.setState({ ov: null, day: Object.assign({}, d, { stage: 'go' }) });
   }
   dayNext() {
+    this.stopTimer(); if (this.state.tOn) this.setState({ tOn: false });
     const d = this.state.day; if (!d) return this.goTown(); this.clearT(); this.anim = null;
     const done = d.idx + 1;
     if (d.idx === 0) this.setState({ screen: 'town', ov: 'dialog', res: null, done, day: Object.assign({}, d, { idx: 1, stage: 'appt' }) });
@@ -2995,18 +3031,40 @@ class Component extends DCLogic {
     if (g === 'home') { title = '파티 갈 준비 끝!'; sub = '오늘 할 일 ' + S.h.tasks.length + '가지를 모두 기억해서 해내셨어요.'; }
     if (g === 'bus') { title = '버스를 잘 타셨어요!'; sub = S.b.target + '번 버스를 정확히 기억하셨어요.'; }
     if (g === 'park') { title = '찾았어요!'; sub = PARK_CHANGES[S.pk.ch].desc; }
+    if (this.state.ov === 'result') return;
+    const left = this.state.tOn ? this.state.tLeft : null; this.stopTimer();
+    if (left != null) { title = '대단해요!\n시간 안에 끝냈어요!'; sub = sub + ' (남은 시간 ' + Math.floor(left / 60) + '분 ' + (left % 60) + '초)'; }
     this.fx('win');
-    const patch = { ov: 'result', res: { g, title, sub } };
+    const patch = { ov: 'result', tOn: false, res: { g, title, sub } };
     if (S.play && S.day) { const info = Object.assign({}, S.day.info); if (g === 'home') info.homeN = S.h.tasks.length; if (g === 'bus') info.bus = S.b.target; if (g === 'park') info.park = PARK_CHANGES[S.pk.ch].desc; patch.day = Object.assign({}, S.day, { info }); }
     this.setState(patch);
   }
-  again() { const g = this.state.res && this.state.res.g; if (g) this.startGame(g, false); }
+  again() { const g = this.state.res && this.state.res.g; if (g) this.startGame(g, !!(this.state.play && this.state.day)); }
+  startTimer() {
+    this.stopTimer();
+    const end = Date.now() + GAME_TIME * 1000;
+    this._tEnd = end; this.setState({ tLeft: GAME_TIME, tOn: true });
+    this._tInt = setInterval(() => {
+      if (this._tEnd !== end) return;
+      const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      if (left !== this.state.tLeft) this.setState({ tLeft: left });
+      if (left <= 0) this.timeUp();
+    }, 200);
+  }
+  stopTimer() { if (this._tInt) clearInterval(this._tInt); this._tInt = null; this._tEnd = null; }
+  timeUp() {
+    this.stopTimer(); this.clearT();
+    const S = this.state; if (S.ov === 'result' || PLAYABLE.indexOf(S.screen) < 0) return;
+    this.fx('timeout');
+    this.setState({ tOn: false, tLeft: 0, ov: 'result', res: { g: S.screen, title: '시간이 끝났어요!\n아쉬워요', sub: '괜찮아요. 한 번 더 하면 더 잘하실 거예요!', timeout: true } });
+  }
 
   // ---------- 짝꿍 찾기 ----------
   startMatch(pairs, day) {
     this.clearT();
     const ids = shuffle(CARD_POOL).slice(0, pairs);
     const cards = shuffle(ids.concat(ids)).map((id, i) => ({ id, i, up: false, done: false, bad: false }));
+    this.startTimer();
     this.setState({ screen: 'match', ov: null, res: null, play: !!day, m: { cards, open: [], tries: 0, found: 0, pairs, lock: false, msg: 'start', last: null } });
   }
   flip(i) {
@@ -3030,9 +3088,10 @@ class Component extends DCLogic {
   startNumber(len, day) {
     this.clearT();
     const L = day ? 6 : len;
+    if (day) this.startTimer(); else { this.stopTimer(); this.setState({ tOn: false }); }
     this.setState({ screen: 'number', ov: null, res: null, play: !!day, n: { len: L, phase: day ? 'show' : 'ready', digits: day ? genDigits(L) : [], input: [], ok: false } });
   }
-  nBegin() { const n = this.state.n; this.setState({ n: Object.assign({}, n, { phase: 'show', digits: genDigits(n.len), input: [] }) }); }
+  nBegin() { const n = this.state.n; this.startTimer(); this.setState({ n: Object.assign({}, n, { phase: 'show', digits: genDigits(n.len), input: [] }) }); }
   nPress(d) {
     const n = this.state.n; if (n.phase !== 'input' || n.input.length >= n.len) return;
     const input = n.input.concat([d]);
@@ -3044,6 +3103,7 @@ class Component extends DCLogic {
 
   // ---------- 오늘의 장보기 ----------
   startMarket(count, day) {
+    this.startTimer();
     this.clearT();
     const want = day ? this.state.day.recipe.items.slice() : shuffle(MARKET_POOL).slice(0, count);
     const others = shuffle(MARKET_POOL.filter((x) => want.indexOf(x) < 0)).slice(0, 12 - want.length);
@@ -3067,6 +3127,7 @@ class Component extends DCLogic {
 
   // ---------- 우리집 ----------
   startHome(lv, day) {
+    this.startTimer();
     const tasks = shuffle(TASK_IDS).slice(0, lv + 3);
     this.setState({ screen: 'home', ov: null, res: null, play: !!day, h: { lv, tasks, done: [], phase: 'memo', peek: false, msg: { t: 'memo' } } });
   }
@@ -3090,6 +3151,7 @@ class Component extends DCLogic {
 
   // ---------- 버스 ----------
   startBus(lv, day) {
+    this.startTimer();
     const r = busNumbers(lv);
     this.setState({ screen: 'bus', ov: null, res: null, play: !!day, b: { lv, target: r.target, nums: r.nums, cols: shuffle(BUS_COLS), phase: 'memo', pick: null, bad: {}, shk: -1, wrong: 0, peek: false, msg: { t: 'memo' } } });
   }
@@ -3112,6 +3174,7 @@ class Component extends DCLogic {
 
   // ---------- 공원 ----------
   startPark(lv, day) {
+    this.startTimer();
     const pool = PARK_CHANGES.map((c, i) => i).filter((i) => PARK_CHANGES[i].lv === lv);
     const ch = pick(pool); const w0 = clone(PARK_BASE); const w1 = clone(PARK_BASE); PARK_CHANGES[ch].ap(w1);
     this.setState({ screen: 'park', ov: null, res: null, play: !!day, pk: { lv, ch, w0, w1, phase: 'observe', changed: false, wrong: 0, msg: { t: 'observe' } } });
@@ -3438,7 +3501,9 @@ class Component extends DCLogic {
       homeRef: this.sceneRef('home'), parkRef: this.sceneRef('park'), busIcon: this.icon('bus'),
       drawPlayer: this.spr('player'), jackoIcon: this.spr('jacko'), drawHallo: this.ref('hallo', drawHalloTown), drawLights: this.ref('hlights', drawHalloLights), crowd: ['witch', 'ghost', 'pumpkin', 'vamp', 'cat', 'grandpa', 'grandma', 'skel'].reduce((o, k) => { o[k] = this.ref('pp:' + k, (c) => hPerson(c, k)); return o; }, ['dots', 'candy', 'pumpkin', 'heart'].reduce((o, k) => { o['b_' + k] = this.ref('bb:' + k, (c) => hBubble(c, k)); return o; }, {})), batRef: this.spr('bat'), ghostRef: this.spr('ghost'), playerStyle: this.playerStyleOf(this.pos || PLAYER_HOME), playerRef: this._pRef || (this._pRef = (el) => { this.playerEl = el; }), arrowRef: this.spr('arrow'), houseIcon: this.spr('house'), faceSunja: this.face('sunja'),
       stamps, stampOn, places, quest, dlg, notice, head, fb, ctl, hv, bv, pv, rcv, endRows, games,
-      res: S.res ? { title: S.res.title, sub: S.res.sub, day: S.play && !!d, free: !(S.play && d) } : { title: '', sub: '', day: false, free: true },
+      res: S.res ? { title: S.res.title, sub: S.res.sub, day: S.play && !!d, free: !(S.play && d), timeout: !!S.res.timeout, won: !S.res.timeout } : { title: '', sub: '', day: false, free: true, timeout: false, won: true },
+      timer: { show: inGame && !!S.tOn, text: Math.floor((S.tLeft || 0) / 60) + ':' + String((S.tLeft || 0) % 60).padStart(2, '0'), cls: 'gtimer' + ((S.tLeft || 0) <= 10 ? ' hurry' : (S.tLeft || 0) <= 30 ? ' soon' : ''), aria: '남은 시간 ' + Math.floor((S.tLeft || 0) / 60) + '분 ' + ((S.tLeft || 0) % 60) + '초' },
+      hourglass: this.ref('hourglass', drawHourglass),
       startDay: this.cl(() => this.startDay()), goSelect: this.cl(() => this.goSelect()), goTown: this.cl(() => this.goTown()), quitDay: this.cl(() => this.quitDay()),
       closeOv: this.cl(() => this.closeOv()), dayNext: this.cl(() => this.dayNext()), again: this.cl(() => this.again()), finishDay: () => this.finishDay(), endDay: this.cl(() => this.endDay())
     };
