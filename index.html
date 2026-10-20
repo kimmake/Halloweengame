@@ -2936,7 +2936,7 @@ class Component extends DCLogic {
   lvOf(g) { return (this._lv && this._lv[g]) || (g === 'park' ? 3 : 2); }
   startGame(g, day) {
     this.clearT(); this.anim = null;
-    if (g === 'match') return this.startMatch(day ? 8 : (this.state.m ? this.state.m.pairs : 8), day);
+    if (g === 'match') return this.startMatch(day ? 4 : (this.state.m ? this.state.m.pairs : 4), day);
     if (g === 'number') return this.startNumber(this.state.n ? this.state.n.len : 5, day);
     if (g === 'market') return this.startMarket(this.state.k ? this.state.k.count : 5, day);
     const lv = day ? (g === 'park' ? 3 : 2) : this.lvOf(g);
@@ -3089,10 +3089,10 @@ class Component extends DCLogic {
   startNumber(len, day) {
     this.clearT();
     const L = day ? 6 : len;
-    if (day) this.startTimer(); else { this.stopTimer(); this.setState({ tOn: false }); }
+    this.stopTimer(); if (this.state.tOn) this.setState({ tOn: false });
     this.setState({ screen: 'number', ov: null, res: null, play: !!day, n: { len: L, phase: day ? 'show' : 'ready', digits: day ? genDigits(L) : [], input: [], ok: false } });
   }
-  nBegin() { const n = this.state.n; this.startTimer(); this.setState({ n: Object.assign({}, n, { phase: 'show', digits: genDigits(n.len), input: [] }) }); }
+  nBegin() { const n = this.state.n; this.setState({ n: Object.assign({}, n, { phase: 'show', digits: genDigits(n.len), input: [] }) }); }
   nPress(d) {
     const n = this.state.n; if (n.phase !== 'input' || n.input.length >= n.len) return;
     const input = n.input.concat([d]);
@@ -3104,7 +3104,7 @@ class Component extends DCLogic {
 
   // ---------- 오늘의 장보기 ----------
   startMarket(count, day) {
-    this.startTimer();
+    this.stopTimer(); if (this.state.tOn) this.setState({ tOn: false });
     this.clearT();
     const want = day ? this.state.day.recipe.items.slice() : shuffle(MARKET_POOL).slice(0, count);
     const others = shuffle(MARKET_POOL.filter((x) => want.indexOf(x) < 0)).slice(0, 12 - want.length);
@@ -3128,7 +3128,7 @@ class Component extends DCLogic {
 
   // ---------- 우리집 ----------
   startHome(lv, day) {
-    this.startTimer();
+    this.stopTimer(); if (this.state.tOn) this.setState({ tOn: false });
     const tasks = shuffle(TASK_IDS).slice(0, lv + 3);
     this.setState({ screen: 'home', ov: null, res: null, play: !!day, h: { lv, tasks, done: [], phase: 'memo', peek: false, msg: { t: 'memo' } } });
   }
@@ -3152,7 +3152,7 @@ class Component extends DCLogic {
 
   // ---------- 버스 ----------
   startBus(lv, day) {
-    this.startTimer();
+    this.stopTimer(); if (this.state.tOn) this.setState({ tOn: false });
     const r = busNumbers(lv);
     this.setState({ screen: 'bus', ov: null, res: null, play: !!day, b: { lv, target: r.target, nums: r.nums, cols: shuffle(BUS_COLS), phase: 'memo', pick: null, bad: {}, shk: -1, wrong: 0, peek: false, msg: { t: 'memo' } } });
   }
@@ -3175,7 +3175,7 @@ class Component extends DCLogic {
 
   // ---------- 공원 ----------
   startPark(lv, day) {
-    this.startTimer();
+    this.stopTimer(); if (this.state.tOn) this.setState({ tOn: false });
     const pool = PARK_CHANGES.map((c, i) => i).filter((i) => PARK_CHANGES[i].lv === lv);
     const ch = pick(pool); const w0 = clone(PARK_BASE); const w1 = clone(PARK_BASE); PARK_CHANGES[ch].ap(w1);
     this.setState({ screen: 'park', ov: null, res: null, play: !!day, pk: { lv, ch, w0, w1, phase: 'observe', changed: false, wrong: 0, msg: { t: 'observe' } } });
@@ -3184,7 +3184,7 @@ class Component extends DCLogic {
     const pk = this.state.pk; if (!pk || pk.phase !== 'observe') return;
     this.setState({ pk: Object.assign({}, pk, { phase: 'cover', msg: { t: 'cover' } }) });
     this.later(() => this.setState({ pk: Object.assign({}, this.state.pk, { changed: true }) }), 900);
-    this.later(() => this.setState({ pk: Object.assign({}, this.state.pk, { phase: 'find', msg: { t: 'find' } }) }), 1850);
+    this.later(() => { this.startTimer(); this.setState({ pk: Object.assign({}, this.state.pk, { phase: 'find', msg: { t: 'find' } }) }); }, 1850);
   }
   pClick(rid) {
     const pk = this.state.pk; if (!pk || pk.phase !== 'find' || this.busy()) return;
@@ -3288,7 +3288,7 @@ class Component extends DCLogic {
       }[h.msg.t];
       fb = { face: this.face('sunja'), npc: 'sunja', text: T[0], kind: T[1] };
       ctl.showLv = !S.play && h.phase === 'memo'; ctl.lvOpts = lvFor('home', h.lv);
-      if (h.phase === 'memo') ctl.main = { show: true, label: '기억했어요', go: () => this.setState({ h: Object.assign({}, this.state.h, { phase: 'play', msg: { t: 'play' } }) }) };
+      if (h.phase === 'memo') ctl.main = { show: true, label: '기억했어요', go: () => { this.startTimer(); this.setState({ h: Object.assign({}, this.state.h, { phase: 'play', msg: { t: 'play' } }) }); } };
       else if (k < n) ctl.sub = { show: true, label: h.peek ? '쪽지 접기' : '쪽지 다시 보기', go: () => this.setState({ h: Object.assign({}, this.state.h, { peek: !this.state.h.peek }) }) };
     }
 
@@ -3322,7 +3322,7 @@ class Component extends DCLogic {
       }[b.msg.t];
       fb = { face: this.face('driver'), npc: 'driver', text: T[0], kind: T[1] };
       ctl.showLv = !S.play && b.phase === 'memo'; ctl.lvOpts = lvFor('bus', b.lv);
-      if (b.phase === 'memo') ctl.main = { show: true, label: '기억했어요', go: () => this.fx('arrive') || this.setState({ b: Object.assign({}, this.state.b, { phase: 'pick', msg: { t: 'pick' } }) }) };
+      if (b.phase === 'memo') ctl.main = { show: true, label: '기억했어요', go: () => { this.fx('arrive'); this.setState({ b: Object.assign({}, this.state.b, { phase: 'pick', msg: { t: 'pick' } }) }); this.later(() => { const b2 = this.state.b; if (this.state.screen === 'bus' && b2 && b2.phase === 'pick' && this.state.ov !== 'result') this.startTimer(); }, 2600); } };
       else if (b.phase === 'pick' && b.wrong > 0) ctl.sub = { show: true, label: b.peek ? '번호 가리기' : '번호 다시 보기', go: () => this.setState({ b: Object.assign({}, this.state.b, { peek: !this.state.b.peek }) }) };
     }
 
@@ -3351,10 +3351,10 @@ class Component extends DCLogic {
     // 짝꿍
     let mv = { cards: [], gridStyle: '', free: true, toggle: () => {}, toggleLabel: '', restart: () => {} };
     if (scr === 'match' && S.m) {
-      const m = S.m; const eight = m.pairs === 8;
+      const m = S.m; const six = m.pairs === 6;
       mv = {
         free: !S.play,
-        gridStyle: 'display:grid;gap:24px 14px;grid-template-columns:repeat(' + (eight ? 8 : 6) + ', ' + (eight ? 132 : 168) + 'px)',
+        gridStyle: 'display:grid;gap:24px 20px;grid-template-columns:repeat(' + (six ? 6 : 4) + ', ' + (six ? 168 : 200) + 'px)',
         cards: m.cards.map((c) => ({
           isBack: !c.up && !c.done, isFace: c.up || c.done, done: c.done, bad: c.bad,
           cls: 'card' + (c.done ? ' done' : '') + (c.bad ? ' bad shake' : ''),
@@ -3362,8 +3362,8 @@ class Component extends DCLogic {
           aria: (c.up || c.done) ? ITEM[c.id] + ' 카드' : (c.i + 1) + '번째 카드, 뒤집기',
           flip: () => this.flip(c.i)
         })),
-        toggleLabel: eight ? '카드 12장으로' : '카드 16장으로',
-        toggle: () => this.startMatch(eight ? 6 : 8, false),
+        toggleLabel: six ? '카드 8장으로' : '카드 12장으로',
+        toggle: () => this.startMatch(six ? 4 : 6, false),
         restart: () => this.startMatch(m.pairs, false)
       };
       const nm = m.last ? ITEM[m.last] : '';
@@ -3393,7 +3393,7 @@ class Component extends DCLogic {
         isReady: n.phase === 'ready', isShow: n.phase === 'show', isInput: n.phase === 'input', isWrong: n.phase === 'result' && !n.ok,
         lenOpts: [5, 6, 7].map((L) => ({ label: L + '자리', cls: 'pxbtn ' + (n.len === L ? 'sel' : 'cream'), pick: () => this.setState({ n: Object.assign({}, this.state.n, { len: L }) }) })),
         begin: this.cl(() => this.nBegin()),
-        memorized: this.cl(() => this.setState({ n: Object.assign({}, this.state.n, { phase: 'input', input: [] }) })),
+        memorized: this.cl(() => { this.startTimer(); this.setState({ n: Object.assign({}, this.state.n, { phase: 'input', input: [] }) }); }),
         keys: [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((k) => ({ d: k, aria: '숫자 ' + k, press: () => this.nPress(k) })),
         erase: () => { const nn = this.state.n; if (nn.phase === 'input') this.setState({ n: Object.assign({}, nn, { input: nn.input.slice(0, -1) }) }); },
         retrySame: () => this.setState({ n: Object.assign({}, this.state.n, { phase: 'show', input: [] }) }),
@@ -3430,7 +3430,7 @@ class Component extends DCLogic {
           pick: () => this.kPick(i)
         })),
         countOpts: [4, 5, 6].map((c) => ({ label: c + '개', aria: '물건 ' + c + '개', cls: 'pxbtn ' + (k.count === c ? 'sel' : 'cream'), pick: () => this.startMarket(c, false) })),
-        memorized: this.cl(() => this.setState({ k: Object.assign({}, this.state.k, { phase: 'shop', msg: { t: 'shop' } }) })),
+        memorized: this.cl(() => { this.startTimer(); this.setState({ k: Object.assign({}, this.state.k, { phase: 'shop', msg: { t: 'shop' } }) }); }),
         togglePeek: () => this.setState({ k: Object.assign({}, this.state.k, { peek: !this.state.k.peek }) })
       };
       const nm = k.msg.id ? ITEM[k.msg.id] : '';
